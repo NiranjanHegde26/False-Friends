@@ -23,9 +23,9 @@ demographics <- data %>%
 demographics_wide <- demographics %>%
   pivot_wider(names_from = Parameter, values_from = Value)
 
-# Rename MD5.hash.of.participant.s.IP.address to UserId
+# Rename MD5.hash.of.participant.s.IP.address to ParticipantId
 demographics_wide <- demographics_wide %>%
-  rename(UserId = MD5.hash.of.participant.s.IP.address)
+  rename(ParticipantId = MD5.hash.of.participant.s.IP.address)
 
 # Write the result to a new CSV file
 write.csv(demographics_wide, "demographics_output.csv", row.names = FALSE)
