@@ -14,8 +14,12 @@ library(dplyr)
 library(tidyr)
 
 data <- read.csv("my_results.csv")
+stimuli_file <- read.csv("Stimuli.csv")
+stimuli_file$Type <- tolower(trimws(stimuli_file$Type))
+stimuli_file$Word <- tolower(trimws(stimuli_file$Word))
 
-# Filter all the main stimuli for all participants where only the target word related rows are considered
+# Filter all the main stimuli for all participants where only the target word related rows are considered.
+# This will also remove any fillers we have in the main stimuli file.
 dashed_sentences <- data %>%
   filter(Label == "main") %>%
   filter(PennElementName == "DashedSentence",
@@ -47,6 +51,22 @@ result <- result %>%
 # Remane the Participant ID
 result <- result %>%
             rename(ParticipantId = MD5.hash.of.participant.s.IP.address)
+
+# Append the type of word to each target word. This was missing in PCIbex coding.
+get_type <- function(word) {
+  word <- tolower(trimws(word))
+  match <- stimuli_file$Type[stimuli_file$Word == word]
+  if (length(match) > 0) {
+    return(match[1])
+  } else {
+    return(NA)
+  }
+}
+
+# There are some strings with ',' character. Remove the character and save it back.
+result$Value <- sapply(result$Value, function(x) gsub("%2C", "", x))
+result$Value <- sapply(result$Value, function(x) gsub("PROFESSOR'S", "PROFESSOR", x))
+result$Type <- sapply(result$Value, get_type)
 
 # Write to new CSV for future usage.
 write.csv(result, "main_output.csv", row.names = FALSE)
