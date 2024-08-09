@@ -19,14 +19,17 @@ std_dev_age <- sd(data$Age, na.rm = TRUE)
 print(paste("Mean:", mean_age))
 print(paste("Standard Deviation:", std_dev_age))
 
-# Step 2: Basic Analysis on the main stimuli
+"
+  Reading time vs the participant's self reported proficiency 
+"
+# Basic Analysis on the main stimuli
 stimuli_data <- read.csv("main_output.csv")
 results <- stimuli_data %>%
   group_by(Type) %>%
   summarize(
     Mean = mean(Reading.time, na.rm = TRUE),
-    SD = sd(Reading.time, na.rm = TRUE), 
-    Count = n()
+    SD = sd(Reading.time, na.rm = TRUE),
+    Count = n(),
   )
 
 print(results)
@@ -52,6 +55,8 @@ mean_reading_time <-  stimuli_data %>%
   group_by(ParticipantId, Type) %>%
   summarize(Mean_Reading_Time = mean(Reading.time, na.rm = TRUE), .groups = "drop")
 
+mean_reading_time
+
 # Merge with proficiency data
 final_data <- mean_reading_time %>%
   left_join(proficiency_df, by = "ParticipantId")
@@ -59,7 +64,87 @@ final_data <- mean_reading_time %>%
 ggplot(final_data, aes(x = Type, y = Mean_Reading_Time, color = Proficiency, group = Proficiency)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
-  labs(title = "Interaction Plot: Mean Reading Time by Type and Proficiency",
+  labs(title = "Mean Reading Time by Type and Self Reported L2 Proficiency",
        x = "Type", y = "Mean Reading Time") +
   theme_minimal() +
   scale_color_brewer(palette = "Set1")
+
+"
+  Comprehension Question score based on self-reported proficiency
+"
+comprehension_score <- stimuli_data %>%
+  group_by(ParticipantId, Type) %>%
+  summarize(Mean_Comprehension_Score = mean(sum(Matches, na.rm = TRUE)), .groups = "drop")
+
+final_comprehension_score_data <- comprehension_score %>%
+  left_join(proficiency_df, by = "ParticipantId")
+
+ggplot(final_comprehension_score_data, aes(x = Type, y = Mean_Comprehension_Score, color = Proficiency, group = Proficiency)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point", size = 3) +
+  labs(title = "Mean Comprehension Score by Type and Self Reported L2  Proficiency",
+       x = "Type", y = "Mean Comprehension Score") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1")
+
+
+"
+  Reading time vs the participant's VST Score
+"
+vst_data <- read.csv("vst_output.csv")
+user_accuracy <- vst_data %>%
+  group_by(ParticipantId) %>%
+  summarize(
+    Score = sum(Matches, na.rm = TRUE),
+    Accuracy = mean(Matches, na.rm = TRUE),
+    Total_Samples = n()
+  ) %>%
+  ungroup()
+
+# View the result
+print(user_accuracy)
+
+# Calculate overall mean accuracy
+overall_mean_accuracy <- mean(user_accuracy$Accuracy, na.rm = TRUE)
+
+# Find highest accuracy
+highest_accuracy <- max(user_accuracy$Accuracy, na.rm = TRUE)
+
+# Find lowest accuracy
+lowest_accuracy <- min(user_accuracy$Accuracy, na.rm = TRUE)
+
+# Print the results
+cat("Overall mean accuracy:", round(overall_mean_accuracy, 2), "\n")
+cat("Highest accuracy:", round(highest_accuracy, 2), "\n")
+cat("Lowest accuracy:", round(lowest_accuracy, 2), "\n")
+
+# Optionally, print the user(s) with the highest and lowest accuracy
+user_highest <- user_accuracy$ParticipantId[which.max(user_accuracy$Accuracy)]
+user_lowest <- user_accuracy$ParticipantId[which.min(user_accuracy$Accuracy)]
+
+cat("User(s) with highest accuracy:", user_highest, "\n")
+cat("User(s) with lowest accuracy:", user_lowest, "\n")
+
+# Merge the VST score with reading time
+vst_final_data <- mean_reading_time %>%
+  left_join(user_accuracy, by = "ParticipantId")
+
+# Plot the results
+ggplot(vst_final_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point", size = 3) +
+  labs(x = "Score", y = "Mean Reading Time", title = "Mean Reading Time by Condition and VST Score") +
+  theme_classic()
+
+
+"
+  Comprehension Question score based on self-reported proficiency
+"
+vst_comprehension_data <- comprehension_score %>%
+  left_join(user_accuracy, by = "ParticipantId")
+
+ggplot(vst_comprehension_data, aes(x = Score, y = Mean_Comprehension_Score, color = Type)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point", size = 3) +
+  labs(x = "Score", y = "Mean Comprehension Score", title = "Mean Comprehension Score by Condition and VST Score") +
+  theme_classic()

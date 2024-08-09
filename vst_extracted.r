@@ -43,44 +43,5 @@ vst_cleaned$Matches <- as.numeric(
   str_trim(str_to_lower(vst_cleaned$Choice)) == str_trim(str_to_lower(vst_cleaned$Answer))
 )
 
-# # First, ensure dplyr is installed and loaded
-# if (!require(dplyr)) install.packages("dplyr")
-# library(dplyr)
-
-# # Create a new dataframe with user IDs and accuracy scores
-# user_accuracy <-vst_cleaned %>%
-#   group_by(ParticipantId) %>%
-#   summarize(
-#     Accuracy = mean(Matches, na.rm = TRUE),
-#     Total_Samples = n()
-#   ) %>%
-#   ungroup()
-
-# # View the result
-# print(user_accuracy)
-
-# # Assuming we've already created the user_accuracy dataframe as in the previous answer
-
-# # Calculate overall mean accuracy
-# overall_mean_accuracy <- mean(user_accuracy$Accuracy, na.rm = TRUE)
-
-# # Find highest accuracy
-# highest_accuracy <- max(user_accuracy$Accuracy, na.rm = TRUE)
-
-# # Find lowest accuracy
-# lowest_accuracy <- min(user_accuracy$Accuracy, na.rm = TRUE)
-
-# # Print the results
-# cat("Overall mean accuracy:", round(overall_mean_accuracy, 2), "\n")
-# cat("Highest accuracy:", round(highest_accuracy, 2), "\n")
-# cat("Lowest accuracy:", round(lowest_accuracy, 2), "\n")
-
-# # Optionally, print the user(s) with the highest and lowest accuracy
-# user_highest <- user_accuracy$ParticipantId[which.max(user_accuracy$Accuracy)]
-# user_lowest <- user_accuracy$ParticipantId[which.min(user_accuracy$Accuracy)]
-
-# cat("User(s) with highest accuracy:", user_highest, "\n")
-# cat("User(s) with lowest accuracy:", user_lowest, "\n")
-
 # Write the result to a new CSV file
 write.csv(vst_cleaned, "vst_output.csv", row.names = FALSE)
