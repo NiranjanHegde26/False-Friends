@@ -43,8 +43,21 @@ result <- dashed_sentences %>%
             by = c("Order.number.of.item", "MD5.hash.of.participant.s.IP.address")) %>%
   arrange(MD5.hash.of.participant.s.IP.address, Order.number.of.item)
 
+result <- result %>%
+  mutate(
+    PressedKey = case_when(
+      PressedKey == "D" ~ "Yes",
+      PressedKey == "K" ~ "No",
+      TRUE ~ PressedKey
+    ),
+    Matches = case_when(
+      PressedKey == SPR_Answer ~ 1,
+      TRUE ~ 0
+    )
+  )
+
 # Remove unnecessary columns from the dataframe by listing all the required columns.
-columns_to_keep <- c("MD5.hash.of.participant.s.IP.address", "Parameter", "Value", "Reading.time","Target.Word.Position", "ItemID", "PressedKey", "SPR_Answer")
+columns_to_keep <- c("MD5.hash.of.participant.s.IP.address", "Parameter", "Value", "Reading.time","Target.Word.Position", "ItemID", "PressedKey", "Matches", "SPR_Answer")
 result <- result %>%
   select(all_of(columns_to_keep))
 
