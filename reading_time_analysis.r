@@ -49,8 +49,20 @@ model_rt_srp <- lmer(Reading.time ~ Proficiency * Type + (1 | ParticipantId), da
 summary(model_rt_srp)
 
 
-model_rt_vst <- glmer(Reading.time ~ Accuracy * Type + (1 | ParticipantId),
+model_rt_vst <- lmer(Reading.time ~ Accuracy * Type + (1 | ParticipantId),
     data = reading_time_data,
-    family = binomial
 )
 summary(model_rt_vst)
+
+# Compare 2 models based on AIC and BIC
+models <- list(model_rt_srp, model_rt_vst)
+aic_values <- sapply(models, AIC)
+bic_values <- sapply(models, BIC)
+
+# Create a data frame for easy comparison
+comparison <- data.frame(
+    Model = paste0("Model", 1:2),
+    AIC = aic_values,
+    BIC = bic_values
+)
+print(comparison)
