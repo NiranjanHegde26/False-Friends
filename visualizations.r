@@ -1,6 +1,6 @@
 "
 Author: Niranjana Hegde BS
-Written on: 03/08/2024, Saarbruecken
+First Checked On: 03/08/2024, Saarbruecken
 Reference documentation from R:
     - https://rkabacoff.github.io/datavis/index.html
     - https://ggplot2.tidyverse.org/
@@ -108,31 +108,40 @@ participant_score <- vst_data %>%
 
 # View the result
 print(participant_score)
+hist(participant_score$Score)
 
 # Calculate overall mean accuracy
-overall_mean_accuracy <- mean(participant_score$Accuracy, na.rm = TRUE)
+overall_mean_score <- mean(participant_score$Score, na.rm = TRUE)
+overall_mean_sd <- sd(participant_score$Score)
 
 # Find highest accuracy
-highest_accuracy <- max(participant_score$Accuracy, na.rm = TRUE)
+highest_accuracy <- max(participant_score$Score, na.rm = TRUE)
 
 # Find lowest accuracy
-lowest_accuracy <- min(participant_score$Accuracy, na.rm = TRUE)
+lowest_accuracy <- min(participant_score$Score, na.rm = TRUE)
 
 # Print the results
-cat("Overall mean accuracy:", round(overall_mean_accuracy, 2), "\n")
-cat("Highest accuracy:", round(highest_accuracy, 2), "\n")
-cat("Lowest accuracy:", round(lowest_accuracy, 2), "\n")
+cat("Overall mean score:", round(overall_mean_score, 2), "\n")
+cat("Highest score:", round(highest_accuracy, 2), "\n")
+cat("Lowest score:", round(lowest_accuracy, 2), "\n")
 
 # Optionally, print the user(s) with the highest and lowest accuracy
 user_highest <- participant_score$ParticipantId[which.max(participant_score$Accuracy)]
 user_lowest <- participant_score$ParticipantId[which.min(participant_score$Accuracy)]
 
-cat("User(s) with highest accuracy:", user_highest, "\n")
-cat("User(s) with lowest accuracy:", user_lowest, "\n")
+cat("User(s) with highest score:", user_highest, "\n")
+cat("User(s) with lowest score:", user_lowest, "\n")
 
 # Merge the VST score with reading time
+lower_bound <- overall_mean_score - overall_mean_sd
+upper_bound <- overall_mean_score + overall_mean_sd
+
+# Filter the data
+filtered_participant_score <- participant_score %>%
+  filter(Score >= lower_bound & Score <= upper_bound)
+
 vst_final_data <- mean_reading_time %>%
-  left_join(participant_score, by = "ParticipantId")
+  left_join(filtered_participant_score, by = "ParticipantId")
 
 # Plot the results
 ggplot(vst_final_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
@@ -141,12 +150,11 @@ ggplot(vst_final_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
   labs(x = "Score", y = "Mean Reading Time", title = "Mean Reading Time by Condition and VST Score") +
   theme_classic()
 
-
 "
   Comprehension Question score based on VST Score
 "
 vst_comprehension_data <- comprehension_score %>%
-  left_join(participant_score, by = "ParticipantId")
+  left_join(filtered_participant_score, by = "ParticipantId")
 
 ggplot(vst_comprehension_data, aes(x = Score, y = Mean_Comprehension_Score, color = Type)) +
   stat_summary(fun = mean, geom = "line") +
@@ -164,7 +172,7 @@ ggplot(comprehension_score_sentence_length, aes(x = SentenceLength, y = Matches,
   geom_line() +
   geom_point() +
   labs(
-    x = "Sentence Length", y = "Accuracy",
+    x = "Sentence Length", y = "Score",
     title = "Interaction between Sentence Length and Accuracy by Type"
   ) +
   theme_minimal() +

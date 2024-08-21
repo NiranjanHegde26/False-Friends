@@ -1,6 +1,6 @@
 "
 Author: Niranjana Hegde BS
-Written on: 12/08/2024, Saarbruecken
+First Checked On: 12/08/2024, Saarbruecken
 Reference documentation from R:
     - https://www.rdocumentation.org/packages/lme4/versions/1.1-35.5/topics/lmer
     - https://www.rdocumentation.org/packages/lme4/versions/1.1-35.5/topics/glmer
@@ -27,6 +27,17 @@ participant_score <- vst_data %>%
         Total_Samples = n()
     ) %>%
     ungroup()
+
+# Calculate overall mean accuracy and standard deviation of accuracy.
+# Use them to exclude any data that are above and below some bound defined by these metrics.
+overall_mean_accuracy <- mean(participant_score$Accuracy, na.rm = TRUE)
+overall_mean_sd <- sd(participant_score$Accuracy)
+lower_bound <- overall_mean_accuracy - overall_mean_sd
+upper_bound <- overall_mean_accuracy + overall_mean_sd
+
+# Filter the data
+participant_score <- participant_score %>%
+    filter(Score >= lower_bound & Score <= upper_bound)
 
 # Add both proficiency and VST score to stimuli data
 comprehension_score_data <- stimuli_data %>%
