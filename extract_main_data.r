@@ -1,6 +1,6 @@
 "
 Author: Niranjana Hegde BS
-Written on: 02/08/2024, Saarbruecken
+First Checked On: 02/08/2024, Saarbruecken
 Reference documentation and online blogs referred:
  - https://www.rdocumentation.org/packages/dplyr/versions/0.7.8/topics/join,
  - https://www.rdocumentation.org/packages/dplyr/versions/1.0.10

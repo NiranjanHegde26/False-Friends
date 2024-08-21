@@ -1,6 +1,6 @@
 "
 Author: Niranjana Hegde BS
-Written on: 30/07/2024, Saarbruecken
+First Checked On: 30/07/2024, Saarbruecken
 Reference documentation from R: https://tidyr.tidyverse.org/reference/pivot_wider.html
 
 Below script will extract the data from CSV, select the relevant columns and extract all the rows that are marked as Demogrpahics.

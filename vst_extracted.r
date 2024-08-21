@@ -1,8 +1,8 @@
 "
 Author: Niranjana Hegde BS
-Written on: 30/07/2024, Saarbruecken
-Reference documentation and online blogs referred: 
- - https://tidyr.tidyverse.org/reference/pivot_wider.html, 
+First Checked On: 30/07/2024, Saarbruecken
+Reference documentation and online blogs referred:
+ - https://tidyr.tidyverse.org/reference/pivot_wider.html,
  - https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html
  - https://r-coder.com/sapply-function-r/
 
@@ -31,11 +31,11 @@ vst_wide <- vst_original %>%
 
 # Rename MD5.hash.of.participant.s.IP.address to ParticipantId
 vst_wide <- vst_wide %>%
-  rename(ParticipantId = MD5.hash.of.participant.s.IP.address, Answer=Target.Word.Position)
+  rename(ParticipantId = MD5.hash.of.participant.s.IP.address, Answer = Target.Word.Position)
 
 # Remove unwanted columns in list
-remove_cols <- c('_Trial_', '_Header_')
-vst_cleaned = subset(vst_wide, select = !(names(vst_wide) %in% remove_cols)) 
+remove_cols <- c("_Trial_", "_Header_")
+vst_cleaned <- subset(vst_wide, select = !(names(vst_wide) %in% remove_cols))
 vst_cleaned$Choice <- sapply(vst_cleaned$Choice, unlist)
 
 # Create new column 'Matches' to count the accuracy for later
