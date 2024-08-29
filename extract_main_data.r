@@ -96,14 +96,11 @@ result$Type <- sapply(result$Value, get_type)
 # From Larson, Kevin. (2005). The Science of Word Recognition; or how I learned to stop worrying and love the bouma. 13. 2-11.
 # we can ignore any reading time less than 200ms and more than 300ms. We become a bit more lenient due to possible key press delays
 # Our new window is thus, 200ms-300ms. So, we filter out any rows that do not fit this window.
-
-count <- sum(result$Reading.time > 350 | result$Reading.time < 200)
-print(paste("Number of rows with reading time > 350 or < 200:", count))
-
-print(min(result$Reading.time))
-
+result$Reading.time <- as.numeric(result$Reading.time)
+count <- sum(result$Reading.time < 200)
+print(paste("Number of rows with reading time < 200:", count))
 result <- result %>% filter(Reading.time >= 200)
 print(paste("Number of rows with reading time in required range:", nrow(result)))
 
 # Write to new CSV for future usage.
-write.csv(result, "main_output.csv", row.names = FALSE)
+write.csv(result, "cleaned.csv", row.names = FALSE)

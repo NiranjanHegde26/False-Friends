@@ -27,7 +27,7 @@ print(paste("Standard Deviation Age of English Exposure:", std_dev_age_l2))
   Reading time vs the participant's self reported proficiency
 "
 # Basic Analysis on the main stimuli
-stimuli_data <- read.csv("main_output.csv")
+stimuli_data <- read.csv("cleaned.csv")
 results <- stimuli_data %>%
   group_by(Type) %>%
   summarize(
