@@ -14,9 +14,14 @@ library(ggplot2)
 data <- read.csv("demographics_output.csv")
 mean_age <- mean(data$Age, na.rm = TRUE)
 std_dev_age <- sd(data$Age, na.rm = TRUE)
+data$L1_age <- as.numeric(data$L1_age)
+mean_age_l2 <- mean(data$L1_age, na.rm = TRUE)
+std_dev_age_l2 <- sd(data$L1_age, na.rm = TRUE)
 
-print(paste("Mean:", mean_age))
-print(paste("Standard Deviation:", std_dev_age))
+print(paste("Mean Age:", mean_age))
+print(paste("Standard Deviation Age:", std_dev_age))
+print(paste("Mean Age of English Exposure:", mean_age_l2))
+print(paste("Standard Deviation Age of English Exposure:", std_dev_age_l2))
 
 "
   Reading time vs the participant's self reported proficiency
@@ -34,7 +39,7 @@ results <- stimuli_data %>%
 print(results)
 
 # Plot the the reading time as simple bar graph
-ggplot(results, aes(x = Type, y = Mean, fill = Type)) +
+rt_type <- ggplot(results, aes(x = Type, y = Mean, fill = Type)) +
   geom_bar(stat = "identity") +
   geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.1) +
   labs(
@@ -43,6 +48,7 @@ ggplot(results, aes(x = Type, y = Mean, fill = Type)) +
     x = "Type"
   ) +
   theme_minimal()
+ggsave(filename = "rt_type.jpg", plot = rt_type, width = 8, height = 6, dpi = 800)
 
 # Now, take the self-reported data from the participants, and use them to plot the proficiency vs Reading time for each type.
 demographics_data <- read.csv("demographics_output.csv")
@@ -62,7 +68,7 @@ mean_reading_time
 final_data <- mean_reading_time %>%
   left_join(proficiency_df, by = "ParticipantId")
 
-ggplot(final_data, aes(x = Type, y = Mean_Reading_Time, color = Proficiency, group = Proficiency)) +
+rt_srp <- ggplot(final_data, aes(x = Type, y = Mean_Reading_Time, color = Proficiency, group = Proficiency)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
   labs(
@@ -71,6 +77,7 @@ ggplot(final_data, aes(x = Type, y = Mean_Reading_Time, color = Proficiency, gro
   ) +
   theme_minimal() +
   scale_color_brewer(palette = "Set1")
+ggsave(filename = "rt_srp.jpg", plot = rt_srp, width = 8, height = 6, dpi = 800)
 
 "
   Comprehension Question score based on self-reported proficiency
@@ -82,7 +89,7 @@ comprehension_score <- stimuli_data %>%
 final_comprehension_score_data <- comprehension_score %>%
   left_join(proficiency_df, by = "ParticipantId")
 
-ggplot(final_comprehension_score_data, aes(x = Type, y = Mean_Comprehension_Score, color = Proficiency, group = Proficiency)) +
+cs_srp <- ggplot(final_comprehension_score_data, aes(x = Type, y = Mean_Comprehension_Score, color = Proficiency, group = Proficiency)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
   labs(
@@ -91,7 +98,7 @@ ggplot(final_comprehension_score_data, aes(x = Type, y = Mean_Comprehension_Scor
   ) +
   theme_minimal() +
   scale_color_brewer(palette = "Set1")
-
+ggsave(filename = "cs_srp.jpg", plot = cs_srp, width = 8, height = 6, dpi = 800)
 
 "
   Reading time vs the participant's VST Score
@@ -110,57 +117,71 @@ participant_score <- vst_data %>%
 print(participant_score)
 hist(participant_score$Score)
 
-# Calculate overall mean accuracy
+# Calculate overall mean score
 overall_mean_score <- mean(participant_score$Score, na.rm = TRUE)
-overall_mean_sd <- sd(participant_score$Score)
+overall_score_sd <- sd(participant_score$Score)
 
-# Find highest accuracy
-highest_accuracy <- max(participant_score$Score, na.rm = TRUE)
+# Find highest score
+highest_score <- max(participant_score$Score, na.rm = TRUE)
 
-# Find lowest accuracy
-lowest_accuracy <- min(participant_score$Score, na.rm = TRUE)
+# Find lowest score
+lowest_score <- min(participant_score$Score, na.rm = TRUE)
 
 # Print the results
 cat("Overall mean score:", round(overall_mean_score, 2), "\n")
-cat("Highest score:", round(highest_accuracy, 2), "\n")
-cat("Lowest score:", round(lowest_accuracy, 2), "\n")
+cat("Highest score:", round(highest_score, 2), "\n")
+cat("Lowest score:", round(overall_score_sd, 2), "\n")
 
-# Optionally, print the user(s) with the highest and lowest accuracy
-user_highest <- participant_score$ParticipantId[which.max(participant_score$Accuracy)]
-user_lowest <- participant_score$ParticipantId[which.min(participant_score$Accuracy)]
+# Optionally, print the user(s) with the highest and lowest score
+user_highest <- participant_score$ParticipantId[which.max(participant_score$Score)]
+user_lowest <- participant_score$ParticipantId[which.min(participant_score$Score)]
 
 cat("User(s) with highest score:", user_highest, "\n")
 cat("User(s) with lowest score:", user_lowest, "\n")
 
-# Merge the VST score with reading time
-lower_bound <- overall_mean_score - overall_mean_sd
-upper_bound <- overall_mean_score + overall_mean_sd
+# Merge the VST score with reading time. The boundaries are defined by IQR
+Q1 <- quantile(participant_score$Score, 0.25) # First quartile (25th percentile)
+Q3 <- quantile(participant_score$Score, 0.75) # Third quartile (75th percentile)
+
+# Calculate IQR
+IQR <- Q3 - Q1
+
+# Calculate the Lower Bound
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q1 + 1.5 * IQR
 
 # Filter the data
 filtered_participant_score <- participant_score %>%
   filter(Score >= lower_bound & Score <= upper_bound)
 
+# Remove reading time data of all those participants that didn't score in the upper and lower bound
 vst_final_data <- mean_reading_time %>%
-  left_join(filtered_participant_score, by = "ParticipantId")
+  left_join(filtered_participant_score, by = "ParticipantId") %>%
+  filter(!is.na(Score))
 
 # Plot the results
-ggplot(vst_final_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
+rt_vst <- ggplot(vst_final_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
   labs(x = "Score", y = "Mean Reading Time", title = "Mean Reading Time by Condition and VST Score") +
   theme_classic()
 
+ggsave(filename = "rt_vst.jpg", plot = rt_vst, width = 8, height = 6, dpi = 800)
+
 "
   Comprehension Question score based on VST Score
 "
 vst_comprehension_data <- comprehension_score %>%
-  left_join(filtered_participant_score, by = "ParticipantId")
+  left_join(filtered_participant_score, by = "ParticipantId") %>%
+  filter(!is.na(Score))
 
-ggplot(vst_comprehension_data, aes(x = Score, y = Mean_Comprehension_Score, color = Type)) +
+cs_vst <- ggplot(vst_comprehension_data, aes(x = Score, y = Mean_Comprehension_Score, color = Type)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
   labs(x = "Score", y = "Mean Comprehension Score", title = "Mean Comprehension Score by Condition and VST Score") +
   theme_classic()
+
+ggsave(filename = "cs_vst.jpg", plot = cs_vst, width = 8, height = 6, dpi = 800)
 
 "
   Comprehension Question score based on the length of the sentence

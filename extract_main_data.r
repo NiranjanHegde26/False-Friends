@@ -19,6 +19,7 @@ stimuli_file <- read.csv("Stimuli.csv")
 stimuli_file$Type <- tolower(trimws(stimuli_file$Type))
 stimuli_file$Word <- tolower(trimws(stimuli_file$Word))
 
+
 # Filter all the main stimuli for all participants where only the target word related rows are considered.
 # This will also remove any fillers we have in the main stimuli file.
 dashed_sentences <- data %>%
@@ -45,11 +46,13 @@ pressed_keys <- data %>%
   slice(1) %>% # Keep only the first PressedKey for each participant and Order.number.of.item
   ungroup()
 
+
 # Join DashedSentences with PressedKeys and create a new dataframe.
 result <- dashed_sentences %>%
   left_join(pressed_keys,
     by = c("Order.number.of.item", "MD5.hash.of.participant.s.IP.address")
   ) %>%
+  filter(!is.na(PressedKey)) %>% # Remove any sentences whose comprehension answer is not present
   arrange(MD5.hash.of.participant.s.IP.address, Order.number.of.item)
 
 result <- result %>%
@@ -64,7 +67,6 @@ result <- result %>%
       TRUE ~ 0
     )
   )
-
 
 # Remove unnecessary columns from the dataframe by listing all the required columns.
 columns_to_keep <- c("MD5.hash.of.participant.s.IP.address", "Parameter", "Value", "Reading.time", "Target.Word.Position", "ItemID", "PressedKey", "Matches", "SPR_Answer", "SentenceLength")
@@ -90,6 +92,18 @@ get_type <- function(word) {
 result$Value <- sapply(result$Value, function(x) gsub("%2C", "", x))
 result$Value <- sapply(result$Value, function(x) gsub("PROFESSOR'S", "PROFESSOR", x))
 result$Type <- sapply(result$Value, get_type)
+
+# From Larson, Kevin. (2005). The Science of Word Recognition; or how I learned to stop worrying and love the bouma. 13. 2-11.
+# we can ignore any reading time less than 200ms and more than 300ms. We become a bit more lenient due to possible key press delays
+# Our new window is thus, 200ms-300ms. So, we filter out any rows that do not fit this window.
+
+count <- sum(result$Reading.time > 350 | result$Reading.time < 200)
+print(paste("Number of rows with reading time > 350 or < 200:", count))
+
+print(min(result$Reading.time))
+
+result <- result %>% filter(Reading.time >= 200)
+print(paste("Number of rows with reading time in required range:", nrow(result)))
 
 # Write to new CSV for future usage.
 write.csv(result, "main_output.csv", row.names = FALSE)
