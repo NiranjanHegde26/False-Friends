@@ -10,7 +10,7 @@ Reference documentation from R:
 library(dplyr)
 library(tidyr)
 library(lme4)
-stimuli_data <- read.csv("main_output.csv")
+stimuli_data <- read.csv("cleaned.csv")
 demographics_data <- read.csv("demographics_output.csv")
 vst_data <- read.csv("vst_output.csv")
 
@@ -28,12 +28,21 @@ participant_score <- vst_data %>%
     ) %>%
     ungroup()
 
-# Calculate overall mean accuracy and standard deviation of accuracy.
+# Calculate overall mean score and standard deviation of score.
 # Use them to exclude any data that are above and below some bound defined by these metrics.
-overall_mean_accuracy <- mean(participant_score$Accuracy, na.rm = TRUE)
-overall_mean_sd <- sd(participant_score$Accuracy)
-lower_bound <- overall_mean_accuracy - overall_mean_sd
-upper_bound <- overall_mean_accuracy + overall_mean_sd
+overall_mean_score <- mean(participant_score$Score, na.rm = TRUE)
+overall_score_sd <- sd(participant_score$Score)
+
+# Look at this later.
+Q1 <- quantile(participant_score$Score, 0.25) # First quartile (25th percentile)
+Q3 <- quantile(participant_score$Score, 0.75) # Third quartile (75th percentile)
+
+# Calculate IQR
+IQR <- Q3 - Q1
+
+# Calculate the Lower Bound
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q1 + 1.5 * IQR
 
 # Filter the data
 participant_score <- participant_score %>%
@@ -42,10 +51,12 @@ participant_score <- participant_score %>%
 # Add both proficiency and VST score to stimuli data
 comprehension_score_data <- stimuli_data %>%
     left_join(proficiency_df, by = "ParticipantId") %>%
-    left_join(participant_score, by = "ParticipantId")
+    left_join(participant_score, by = "ParticipantId") %>%
+    filter(!is.na(Score))
 
 self_reported_proficiency_levels <- c("intermediate", "advanced") # Since we didn't have any beginner English L2 speakers
 word_types <- c("false friend", "cognate", "unrelated")
+
 
 comprehension_score_data$Proficiency <- factor(comprehension_score_data$Proficiency, levels = self_reported_proficiency_levels)
 comprehension_score_data$Type <- factor(comprehension_score_data$Type, levels = word_types)
@@ -59,7 +70,6 @@ contrasts(comprehension_score_data$Type) <- word_type_contrasts
 
 model_cs_srp <- glmer(Matches ~ Proficiency * Type + (1 | ParticipantId), data = comprehension_score_data, family = binomial)
 summary(model_cs_srp)
-
 
 model_cs_vst <- glmer(Matches ~ Accuracy * Type + (1 | ParticipantId),
     data = comprehension_score_data,
