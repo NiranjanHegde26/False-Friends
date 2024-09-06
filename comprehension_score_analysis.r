@@ -10,7 +10,11 @@ Reference documentation from R:
 library(dplyr)
 library(tidyr)
 library(lme4)
-stimuli_data <- read.csv("cleaned.csv")
+library(ggplot2)
+library(lmerTest)
+library(emmeans)
+
+stimuli_data <- read.csv("spr.csv")
 demographics_data <- read.csv("demographics_output.csv")
 vst_data <- read.csv("vst_output.csv")
 
@@ -32,7 +36,8 @@ participant_score <- vst_data %>%
 # Use them to exclude any data that are above and below some bound defined by these metrics.
 overall_mean_score <- mean(participant_score$Score, na.rm = TRUE)
 overall_score_sd <- sd(participant_score$Score)
-
+overall_mean_score
+overall_score_sd
 # Look at this later.
 Q1 <- quantile(participant_score$Score, 0.25) # First quartile (25th percentile)
 Q3 <- quantile(participant_score$Score, 0.75) # Third quartile (75th percentile)
@@ -50,9 +55,7 @@ participant_score <- participant_score %>%
 
 # Add both proficiency and VST score to stimuli data
 comprehension_score_data <- stimuli_data %>%
-    left_join(proficiency_df, by = "ParticipantId") %>%
-    left_join(participant_score, by = "ParticipantId") %>%
-    filter(!is.na(Score))
+    left_join(proficiency_df, by = "ParticipantId")
 
 self_reported_proficiency_levels <- c("intermediate", "advanced") # Since we didn't have any beginner English L2 speakers
 word_types <- c("false friend", "cognate", "unrelated")
@@ -68,14 +71,66 @@ word_type_contrasts <- matrix(c(
 ), ncol = 2)
 contrasts(comprehension_score_data$Type) <- word_type_contrasts
 
+
+# Model fit for Self Reported Proficiency
 model_cs_srp <- glmer(Matches ~ Proficiency * Type + (1 | ParticipantId), data = comprehension_score_data, family = binomial)
 summary(model_cs_srp)
+emmeans(model_cs_srp, pairwise ~ Type | Proficiency)
 
-model_cs_vst <- glmer(Matches ~ Accuracy * Type + (1 | ParticipantId),
-    data = comprehension_score_data,
+# Some post-model fit analysis
+# Residuals vs Fitted Plot
+residuals <- resid(model_cs_srp)
+fitted <- fitted(model_cs_srp)
+
+residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
+ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+    geom_point() +
+    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
+    labs(title = "Residuals vs Fitted Plot - Comprehension Score vs Self Reported Proficiency", x = "Fitted Values", y = "Residuals") +
+    theme_minimal()
+
+# QQ Plot
+residuals_qq_df <- data.frame(Residuals = residuals)
+ggplot(residuals_qq_df, aes(sample = Residuals)) +
+    stat_qq() +
+    stat_qq_line(color = "red") + # Add a Q-Q line
+    labs(title = "Q-Q Plot of Residuals - Comprehension Score vs Self Reported Proficiency", x = "Theoretical Quantiles", y = "Sample Quantiles") +
+    theme_minimal()
+
+
+# Model fit for VST Score
+comprehension_score_data_vst <- stimuli_data %>%
+    left_join(proficiency_df, by = "ParticipantId") %>%
+    left_join(participant_score, by = "ParticipantId") %>%
+    filter(!is.na(Score))
+comprehension_score_data_vst$Score_centered <- scale(comprehension_score_data_vst$Score, center = TRUE, scale = FALSE)
+model_cs_vst <- glmer(Matches ~ Score_centered * Type + (1 | ParticipantId),
+    data = comprehension_score_data_vst,
     family = binomial
 )
 summary(model_cs_vst)
+
+# Residuals vs Fitted Plot
+residuals <- resid(model_cs_vst)
+fitted <- fitted(model_cs_vst)
+residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
+
+ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+    geom_point() +
+    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
+    labs(title = "Residuals vs Fitted Plot Comprehension Score vs VST", x = "Fitted Values", y = "Residuals") +
+    theme_minimal()
+
+# Q-Q plot
+residuals_qq_df <- data.frame(Residuals = residuals)
+ggplot(residuals_qq_df, aes(sample = Residuals)) +
+    stat_qq() +
+    stat_qq_line(color = "red") + # Add a Q-Q line
+    labs(title = "Q-Q Plot of Residuals Comprehension Score vs VST", x = "Theoretical Quantiles", y = "Sample Quantiles") +
+    theme_minimal()
+emmeans(model_cs_vst, pairwise ~ Type | Score_centered)
 
 # Add sentence length as a fixed effect to see if it can give a better fit.
 # The assumption here is that maybe the sentence length has an effect on the participants' ability to answer.

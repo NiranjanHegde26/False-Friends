@@ -10,7 +10,11 @@ Reference documentation from R:
 library(dplyr)
 library(tidyr)
 library(lme4)
-stimuli_data <- read.csv("cleaned.csv")
+library(emmeans)
+library(lmerTest)
+library(ggplot2)
+
+stimuli_data <- read.csv("spr.csv")
 demographics_data <- read.csv("demographics_output.csv")
 vst_data <- read.csv("vst_output.csv")
 
@@ -50,9 +54,7 @@ participant_score <- participant_score %>%
 
 # Add both proficiency and VST score to stimuli data
 reading_time_data <- stimuli_data %>%
-    left_join(proficiency_df, by = "ParticipantId") %>%
-    left_join(participant_score, by = "ParticipantId") %>%
-    filter(!is.na(Score))
+    left_join(proficiency_df, by = "ParticipantId")
 
 self_reported_proficiency_levels <- c("intermediate", "advanced") # Since we didn't have any beginner English L2 speakers
 word_types <- c("false friend", "cognate", "unrelated")
@@ -66,15 +68,63 @@ word_type_contrasts <- matrix(c(
     0, 1 / 2, -1 / 2
 ), ncol = 2)
 contrasts(reading_time_data$Type) <- word_type_contrasts
+
+
 model_rt_srp <- lmer(Reading.time ~ Proficiency * Type + (1 | ParticipantId), data = reading_time_data)
 summary(model_rt_srp)
 
+residuals <- resid(model_rt_srp)
+fitted <- fitted(model_rt_srp)
 
-model_rt_vst <- lmer(Reading.time ~ Proficiency * Type + (1 | ParticipantId),
-    data = reading_time_data,
+residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
+ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+    geom_point() +
+    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
+    labs(title = "Residuals vs Fitted Plot - Readting time vs Self Reported Proficiency", x = "Fitted Values", y = "Residuals") +
+    theme_minimal()
+
+# QQ Plot
+residuals_qq_df <- data.frame(Residuals = residuals)
+ggplot(residuals_qq_df, aes(sample = Residuals)) +
+    stat_qq() +
+    stat_qq_line(color = "red") + # Add a Q-Q line
+    labs(title = "Q-Q Plot of Residuals - Readting time vs Self Reported Proficiency", x = "Theoretical Quantiles", y = "Sample Quantiles") +
+    theme_minimal()
+
+# Post-hoc comparisons for reading time model
+emmeans(model_rt_srp, pairwise ~ Type | Proficiency)
+
+# Model fit using VST
+reading_time_data_vst <- stimuli_data %>%
+    left_join(proficiency_df, by = "ParticipantId") %>%
+    left_join(participant_score, by = "ParticipantId") %>%
+    filter(!is.na(Score))
+reading_time_data_vst$Score_Centered <- scale(reading_time_data_vst$Score, center = TRUE, scale = FALSE)
+model_rt_vst <- lmer(Reading.time ~ Score_Centered * Type + (1 | ParticipantId),
+    data = reading_time_data_vst,
 )
 summary(model_rt_vst)
 
+residuals <- resid(model_rt_vst)
+fitted <- fitted(model_rt_vst)
+
+residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
+ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+    geom_point() +
+    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
+    labs(title = "Residuals vs Fitted Plot - Readting time vs VST", x = "Fitted Values", y = "Residuals") +
+    theme_minimal()
+
+# QQ Plot
+residuals_qq_df <- data.frame(Residuals = residuals)
+ggplot(residuals_qq_df, aes(sample = Residuals)) +
+    stat_qq() +
+    stat_qq_line(color = "red") + # Add a Q-Q line
+    labs(title = "Q-Q Plot of Residuals - Readting time vs VST", x = "Theoretical Quantiles", y = "Sample Quantiles") +
+    theme_minimal()
+emmeans(model_rt_vst, pairwise ~ Type | Score_Centered)
 # Compare 2 models based on AIC and BIC
 models <- list(model_rt_srp, model_rt_vst)
 aic_values <- sapply(models, AIC)

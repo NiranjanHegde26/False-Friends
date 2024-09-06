@@ -27,7 +27,7 @@ print(paste("Standard Deviation Age of English Exposure:", std_dev_age_l2))
   Reading time vs the participant's self reported proficiency
 "
 # Basic Analysis on the main stimuli
-stimuli_data <- read.csv("cleaned.csv")
+stimuli_data <- read.csv("spr.csv")
 results <- stimuli_data %>%
   group_by(Type) %>%
   summarize(
@@ -37,7 +37,6 @@ results <- stimuli_data %>%
   )
 
 print(results)
-
 # Plot the the reading time as simple bar graph
 rt_type <- ggplot(results, aes(x = Type, y = Mean, fill = Type)) +
   geom_bar(stat = "identity") +
@@ -62,13 +61,11 @@ mean_reading_time <- stimuli_data %>%
   group_by(ParticipantId, Type) %>%
   summarize(Mean_Reading_Time = mean(Reading.time, na.rm = TRUE), .groups = "drop")
 
-mean_reading_time
-
 # Merge with proficiency data
-final_data <- mean_reading_time %>%
+spr_data <- mean_reading_time %>%
   left_join(proficiency_df, by = "ParticipantId")
 
-rt_srp <- ggplot(final_data, aes(x = Type, y = Mean_Reading_Time, color = Proficiency, group = Proficiency)) +
+rt_srp <- ggplot(spr_data, aes(x = Type, y = Mean_Reading_Time, color = Proficiency, group = Proficiency)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
   labs(
@@ -120,7 +117,6 @@ hist(participant_score$Score)
 # Calculate overall mean score
 overall_mean_score <- mean(participant_score$Score, na.rm = TRUE)
 overall_score_sd <- sd(participant_score$Score)
-
 # Find highest score
 highest_score <- max(participant_score$Score, na.rm = TRUE)
 
@@ -155,12 +151,12 @@ filtered_participant_score <- participant_score %>%
   filter(Score >= lower_bound & Score <= upper_bound)
 
 # Remove reading time data of all those participants that didn't score in the upper and lower bound
-vst_final_data <- mean_reading_time %>%
+vst_spr_data <- mean_reading_time %>%
   left_join(filtered_participant_score, by = "ParticipantId") %>%
   filter(!is.na(Score))
 
 # Plot the results
-rt_vst <- ggplot(vst_final_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
+rt_vst <- ggplot(vst_spr_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
   labs(x = "Score", y = "Mean Reading Time", title = "Mean Reading Time by Condition and VST Score") +

@@ -103,4 +103,4 @@ result <- result %>% filter(Reading.time >= 200)
 print(paste("Number of rows with reading time in required range:", nrow(result)))
 
 # Write to new CSV for future usage.
-write.csv(result, "cleaned.csv", row.names = FALSE)
+write.csv(result, "spr.csv", row.names = FALSE)
