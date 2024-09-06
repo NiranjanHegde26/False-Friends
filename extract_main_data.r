@@ -94,11 +94,11 @@ result$Value <- sapply(result$Value, function(x) gsub("PROFESSOR'S", "PROFESSOR"
 result$Type <- sapply(result$Value, get_type)
 
 # From Larson, Kevin. (2005). The Science of Word Recognition; or how I learned to stop worrying and love the bouma. 13. 2-11.
-# we can ignore any reading time less than 200ms and more than 300ms. We become a bit more lenient due to possible key press delays
-# Our new window is thus, 200ms-300ms. So, we filter out any rows that do not fit this window.
+# we can ignore any reading time less than 200ms. So, we filter out any rows that do not fit this window.
 result$Reading.time <- as.numeric(result$Reading.time)
 count <- sum(result$Reading.time < 200)
 print(paste("Number of rows with reading time < 200:", count))
+
 result <- result %>% filter(Reading.time >= 200)
 print(paste("Number of rows with reading time in required range:", nrow(result)))
 
