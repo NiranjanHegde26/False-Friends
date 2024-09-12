@@ -75,33 +75,42 @@ word_type_contrasts <- matrix(c(
 ), ncol = 2)
 contrasts(reading_time_data$Type) <- word_type_contrasts
 
-
+"
+    Model fit for Self Reported Proficiency
+"
 model_rt_srp <- lmer(Reading.time ~ Proficiency * Type + (1 | ParticipantId), data = reading_time_data)
 summary(model_rt_srp)
 
+# Some post-model fit analysis
+# Residuals vs Fitted Plot
 residuals <- resid(model_rt_srp)
 fitted <- fitted(model_rt_srp)
-
 residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
-ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+
+plot_dir <- file.path(parent_dir, "False-Friends/images") # All images will be saved into this sub folder
+rf_spr_srp <- ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
     geom_point() +
-    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
-    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
-    labs(title = "Residuals vs Fitted Plot - Readting time vs Self Reported Proficiency", x = "Fitted Values", y = "Residuals") +
+    geom_smooth(method = "loess", se = FALSE, color = "#00FFFF") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") + # Add a horizontal line at y = 0
+    labs(title = "Residuals vs Fitted Plot - Reading time vs Self Reported Proficiency", x = "Fitted Values", y = "Residuals") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "rf_spr_srp.jpg"), plot = rf_spr_srp, width = 8, height = 6, dpi = 800)
 
 # QQ Plot
 residuals_qq_df <- data.frame(Residuals = residuals)
-ggplot(residuals_qq_df, aes(sample = Residuals)) +
+qq_spr_srp <- ggplot(residuals_qq_df, aes(sample = Residuals)) +
     stat_qq() +
     stat_qq_line(color = "red") + # Add a Q-Q line
-    labs(title = "Q-Q Plot of Residuals - Readting time vs Self Reported Proficiency", x = "Theoretical Quantiles", y = "Sample Quantiles") +
+    labs(title = "Q-Q Plot of Residuals - Reading time vs Self Reported Proficiency", x = "Theoretical Quantiles", y = "Sample Quantiles") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "qq_spr_srp.jpg"), plot = qq_spr_srp, width = 8, height = 6, dpi = 800)
 
-# Post-hoc comparisons for reading time model
+# Post-hoc comparisons for reading time model using Self Reported Proficiency
 emmeans(model_rt_srp, pairwise ~ Type | Proficiency)
 
-# Model fit using VST
+"
+    Model fit for VST Score
+"
 reading_time_data_vst <- stimuli_data %>%
     left_join(proficiency_df, by = "ParticipantId") %>%
     left_join(participant_score, by = "ParticipantId") %>%
@@ -112,25 +121,32 @@ model_rt_vst <- lmer(Reading.time ~ Score_Centered * Type + (1 | ParticipantId),
 )
 summary(model_rt_vst)
 
-residuals <- resid(model_rt_vst)
-fitted <- fitted(model_rt_vst)
+# Some post-model fit analysis
+# Residuals vs Fitted Plot
+residuals_vst <- resid(model_rt_vst)
+fitted_vst <- fitted(model_rt_vst)
 
-residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
-ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+residuals_df_vst <- data.frame(Residuals = residuals_vst, Fitted = fitted_vst)
+rf_spr_vst <- ggplot(residuals_df_vst, aes(x = Fitted, y = Residuals)) +
     geom_point() +
-    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
-    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
-    labs(title = "Residuals vs Fitted Plot - Readting time vs VST", x = "Fitted Values", y = "Residuals") +
+    geom_smooth(method = "loess", se = FALSE, color = "#00FFFF") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") + # Add a horizontal line at y = 0
+    labs(title = "Residuals vs Fitted Plot - Reading time vs VST", x = "Fitted Values", y = "Residuals") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "rf_spr_vst.jpg"), plot = rf_spr_vst, width = 8, height = 6, dpi = 800)
 
 # QQ Plot
-residuals_qq_df <- data.frame(Residuals = residuals)
-ggplot(residuals_qq_df, aes(sample = Residuals)) +
+residuals_qq_df_vst <- data.frame(Residuals = residuals_vst)
+qq_spr_vst <- ggplot(residuals_qq_df_vst, aes(sample = Residuals)) +
     stat_qq() +
     stat_qq_line(color = "red") + # Add a Q-Q line
-    labs(title = "Q-Q Plot of Residuals - Readting time vs VST", x = "Theoretical Quantiles", y = "Sample Quantiles") +
+    labs(title = "Q-Q Plot of Residuals - Reading time vs VST", x = "Theoretical Quantiles", y = "Sample Quantiles") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "qq_spr_vst.jpg"), plot = qq_spr_vst, width = 8, height = 6, dpi = 800)
+
+# Post-hoc comparisons for reading time model using VST score
 emmeans(model_rt_vst, pairwise ~ Type | Score_Centered)
+
 # Compare 2 models based on AIC and BIC
 models <- list(model_rt_srp, model_rt_vst)
 aic_values <- sapply(models, AIC)

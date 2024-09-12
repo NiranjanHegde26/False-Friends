@@ -4,18 +4,24 @@ First Checked On: 03/08/2024, Saarbruecken
 Reference documentation from R:
     - https://rkabacoff.github.io/datavis/index.html
     - https://ggplot2.tidyverse.org/
+    This script is dedicated for visualizing the descriptic statistics as well as the interactions of word-types and proficiency levels (Or VST score).
 "
 
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-# Step 1: Basic Analysis on the Demographics
+# Read CSV
 current_dir <- getwd()
 parent_dir <- dirname(current_dir)
 file_path_data <- file.path(parent_dir, "False-Friends/csv", "spr.csv")
+stimuli_data <- read.csv(file_path_data)
 file_path_demographics <- file.path(parent_dir, "False-Friends/csv", "demographics_output.csv")
 demographics_data <- read.csv(file_path_demographics)
+file_path_vst_data <- file.path(parent_dir, "False-Friends/csv", "vst_output.csv")
+vst_data <- read.csv(file_path_vst_data)
+
+# Basic Analysis on the Demographics
 mean_age <- mean(demographics_data$Age, na.rm = TRUE)
 std_dev_age <- sd(demographics_data$Age, na.rm = TRUE)
 demographics_data$L1_age <- as.numeric(demographics_data$L1_age)
@@ -31,7 +37,6 @@ print(paste("Standard Deviation Age of English Exposure:", std_dev_age_l2))
   Reading time vs the participant's self reported proficiency
 "
 # Basic Analysis on the main stimuli
-stimuli_data <- read.csv(file_path_data)
 results <- stimuli_data %>%
   group_by(Type) %>%
   summarize(
@@ -97,7 +102,8 @@ comprehension_score_metrics <- final_comprehension_score_data %>%
   group_by(Type, Proficiency) %>%
   summarise(Mean_Score = mean(Mean_Comprehension_Score, na.rm = TRUE), SD = sd(Mean_Comprehension_Score, na.rm = TRUE))
 
-comprehension_score_metrics
+# See descriptive statistics like mean and sd for word type and proficiency levels for Self reported proficiency.
+print(comprehension_score_metrics)
 
 cs_srp <- ggplot(final_comprehension_score_data, aes(x = Type, y = Mean_Comprehension_Score, color = Proficiency, group = Proficiency)) +
   stat_summary(fun = mean, geom = "line") +
@@ -113,8 +119,6 @@ ggsave(filename = file.path(plot_dir, "cs_srp.jpg"), plot = cs_srp, width = 8, h
 "
   Reading time vs the participant's VST Score
 "
-file_path_vst_data <- file.path(parent_dir, "False-Friends/csv", "vst_output.csv")
-vst_data <- read.csv(file_path_vst_data)
 participant_score <- vst_data %>%
   group_by(ParticipantId) %>%
   summarize(
@@ -124,18 +128,9 @@ participant_score <- vst_data %>%
   ) %>%
   ungroup()
 
-# View the result
-print(participant_score)
-hist(participant_score$Score)
-
 # Calculate overall mean score
 overall_mean_score <- mean(participant_score$Score, na.rm = TRUE)
 overall_score_sd <- sd(participant_score$Score)
-# Find highest score
-highest_score <- max(participant_score$Score, na.rm = TRUE)
-
-# Find lowest score
-lowest_score <- min(participant_score$Score, na.rm = TRUE)
 
 # Print the results
 cat("Overall mean score:", round(overall_mean_score, 2), "\n")
@@ -184,13 +179,15 @@ ggsave(filename = file.path(plot_dir, "rt_vst.jpg"), plot = rt_vst, width = 8, h
 "
 vst_comprehension_data <- comprehension_score %>%
   left_join(filtered_participant_score, by = "ParticipantId") %>%
-  filter(!is.na(Score))
+  filter(!is.na(Score)) # Remove any entries of the participants who got filtered by IQR
+
 mean_score_by_type <- vst_comprehension_data %>%
   group_by(Type) %>%
   summarise(Mean_Score = mean(Mean_Comprehension_Score, na.rm = TRUE), SD = sd(Mean_Comprehension_Score, na.rm = TRUE))
 
-# Print the result
-mean_score_by_type
+# See descriptive statistics like mean and sd for word type and proficiency levels for VST
+print(mean_score_by_type)
+
 cs_vst <- ggplot(vst_comprehension_data, aes(x = Score, y = Mean_Comprehension_Score, color = Type)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +

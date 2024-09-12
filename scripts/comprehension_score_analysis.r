@@ -89,22 +89,25 @@ emmeans(model_cs_srp, pairwise ~ Type | Proficiency)
 # Residuals vs Fitted Plot
 residuals <- resid(model_cs_srp)
 fitted <- fitted(model_cs_srp)
-
 residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
-ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+
+plot_dir <- file.path(parent_dir, "False-Friends/images") # All images will be saved into this sub folder
+rf_cs_srp <- ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
     geom_point() +
-    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
-    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
+    geom_smooth(method = "loess", se = FALSE, color = "#00FFFF") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") + # Add a horizontal line at y = 0
     labs(title = "Residuals vs Fitted Plot - Comprehension Score vs Self Reported Proficiency", x = "Fitted Values", y = "Residuals") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "rf_cs_srp.jpg"), plot = rf_cs_srp, width = 8, height = 6, dpi = 800)
 
 # QQ Plot
 residuals_qq_df <- data.frame(Residuals = residuals)
-ggplot(residuals_qq_df, aes(sample = Residuals)) +
+qq_cs_srp <- ggplot(residuals_qq_df, aes(sample = Residuals)) +
     stat_qq() +
     stat_qq_line(color = "red") + # Add a Q-Q line
     labs(title = "Q-Q Plot of Residuals - Comprehension Score vs Self Reported Proficiency", x = "Theoretical Quantiles", y = "Sample Quantiles") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "qq_cs_srp.jpg"), plot = qq_cs_srp, width = 8, height = 6, dpi = 800)
 
 "
     Model fit for VST Score
@@ -121,28 +124,33 @@ model_cs_vst <- glmer(Matches ~ Score_centered * Type + (1 | ParticipantId),
 )
 summary(model_cs_vst)
 
+# Some post-model fit analysis
 # Residuals vs Fitted Plot
-residuals <- resid(model_cs_vst)
-fitted <- fitted(model_cs_vst)
-residuals_df <- data.frame(Residuals = residuals, Fitted = fitted)
+residuals_vst <- resid(model_cs_vst)
+fitted_vst <- fitted(model_cs_vst)
+residuals_df_vst <- data.frame(Residuals = residuals_vst, Fitted = fitted_vst)
 
-ggplot(residuals_df, aes(x = Fitted, y = Residuals)) +
+rf_cs_vst <- ggplot(residuals_df_vst, aes(x = Fitted, y = Residuals)) +
     geom_point() +
-    geom_smooth(method = "loess", se = FALSE, color = "#db890d") + # Add a smooth line
-    geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # Add a horizontal line at y = 0
+    geom_smooth(method = "loess", se = FALSE, color = "#00FFFF") + # Add a smooth line
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") + # Add a horizontal line at y = 0
     labs(title = "Residuals vs Fitted Plot Comprehension Score vs VST", x = "Fitted Values", y = "Residuals") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "rf_cs_vst .jpg"), plot = rf_cs_vst, width = 8, height = 6, dpi = 800)
 
 # Q-Q plot
-residuals_qq_df <- data.frame(Residuals = residuals)
-ggplot(residuals_qq_df, aes(sample = Residuals)) +
+residuals_qq_df_vst <- data.frame(Residuals = residuals_vst)
+qq_cs_vst <- ggplot(residuals_qq_df_vst, aes(sample = Residuals)) +
     stat_qq() +
     stat_qq_line(color = "red") + # Add a Q-Q line
     labs(title = "Q-Q Plot of Residuals Comprehension Score vs VST", x = "Theoretical Quantiles", y = "Sample Quantiles") +
     theme_minimal()
+ggsave(filename = file.path(plot_dir, "qq_cs_vst.jpg"), plot = qq_cs_vst, width = 8, height = 6, dpi = 800)
+
+# Post hoc analysis
 emmeans(model_cs_vst, pairwise ~ Type | Score_centered)
 
-# Compare 3 models based on AIC and BIC
+# Compare 2 models based on AIC and BIC
 models <- list(model_cs_srp, model_cs_vst)
 aic_values <- sapply(models, AIC)
 bic_values <- sapply(models, BIC)
