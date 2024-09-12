@@ -14,8 +14,12 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 
-data <- read.csv("my_results.csv")
-stimuli_file <- read.csv("Stimuli.csv")
+current_dir <- getwd()
+parent_dir <- dirname(current_dir)
+file_path_data <- file.path(parent_dir, "False-Friends/csv", "cleaned.csv")
+file_path_stimuli <- file.path(parent_dir, "False-Friends/csv", "Stimuli.csv")
+data <- read.csv(file_path_data)
+stimuli_file <- read.csv(file_path_stimuli)
 stimuli_file$Type <- tolower(trimws(stimuli_file$Type))
 stimuli_file$Word <- tolower(trimws(stimuli_file$Word))
 
@@ -103,4 +107,5 @@ result <- result %>% filter(Reading.time >= 200)
 print(paste("Number of rows with reading time in required range:", nrow(result)))
 
 # Write to new CSV for future usage.
-write.csv(result, "spr.csv", row.names = FALSE)
+output_file_path <- file.path(parent_dir, "False-Friends/csv", "spr.csv")
+write.csv(result, output_file_path, row.names = FALSE)

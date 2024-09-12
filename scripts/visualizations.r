@@ -11,12 +11,16 @@ library(tidyr)
 library(ggplot2)
 
 # Step 1: Basic Analysis on the Demographics
-data <- read.csv("demographics_output.csv")
-mean_age <- mean(data$Age, na.rm = TRUE)
-std_dev_age <- sd(data$Age, na.rm = TRUE)
-data$L1_age <- as.numeric(data$L1_age)
-mean_age_l2 <- mean(data$L1_age, na.rm = TRUE)
-std_dev_age_l2 <- sd(data$L1_age, na.rm = TRUE)
+current_dir <- getwd()
+parent_dir <- dirname(current_dir)
+file_path_data <- file.path(parent_dir, "False-Friends/csv", "spr.csv")
+file_path_demographics <- file.path(parent_dir, "False-Friends/csv", "demographics_output.csv")
+demographics_data <- read.csv(file_path_demographics)
+mean_age <- mean(demographics_data$Age, na.rm = TRUE)
+std_dev_age <- sd(demographics_data$Age, na.rm = TRUE)
+demographics_data$L1_age <- as.numeric(demographics_data$L1_age)
+mean_age_l2 <- mean(demographics_data$L1_age, na.rm = TRUE)
+std_dev_age_l2 <- sd(demographics_data$L1_age, na.rm = TRUE)
 
 print(paste("Mean Age:", mean_age))
 print(paste("Standard Deviation Age:", std_dev_age))
@@ -27,7 +31,7 @@ print(paste("Standard Deviation Age of English Exposure:", std_dev_age_l2))
   Reading time vs the participant's self reported proficiency
 "
 # Basic Analysis on the main stimuli
-stimuli_data <- read.csv("spr.csv")
+stimuli_data <- read.csv(file_path_data)
 results <- stimuli_data %>%
   group_by(Type) %>%
   summarize(
@@ -37,7 +41,9 @@ results <- stimuli_data %>%
   )
 
 print(results)
+
 # Plot the the reading time as simple bar graph
+plot_dir <- file.path(parent_dir, "False-Friends/images") # All images will be saved into this sub folder
 rt_type <- ggplot(results, aes(x = Type, y = Mean, fill = Type)) +
   geom_bar(stat = "identity") +
   geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.1) +
@@ -47,10 +53,9 @@ rt_type <- ggplot(results, aes(x = Type, y = Mean, fill = Type)) +
     x = "Type"
   ) +
   theme_minimal()
-ggsave(filename = "rt_type.jpg", plot = rt_type, width = 8, height = 6, dpi = 800)
+ggsave(filename = file.path(plot_dir, "rt_type.jpg"), plot = rt_type, width = 8, height = 6, dpi = 800)
 
 # Now, take the self-reported data from the participants, and use them to plot the proficiency vs Reading time for each type.
-demographics_data <- read.csv("demographics_output.csv")
 proficiency_df <- data.frame(
   ParticipantId = demographics_data$ParticipantId,
   Proficiency = demographics_data$L1_level
@@ -73,8 +78,10 @@ rt_srp <- ggplot(spr_data, aes(x = Type, y = Mean_Reading_Time, color = Proficie
     x = "Type", y = "Mean Reading Time"
   ) +
   theme_minimal() +
-  scale_color_brewer(palette = "Set1")
-ggsave(filename = "rt_srp.jpg", plot = rt_srp, width = 8, height = 6, dpi = 800)
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "bottom")
+
+ggsave(filename = file.path(plot_dir, "rt_srp.jpg"), plot = rt_srp, width = 8, height = 6, dpi = 800)
 
 "
   Comprehension Question score based on self-reported proficiency
@@ -86,6 +93,12 @@ comprehension_score <- stimuli_data %>%
 final_comprehension_score_data <- comprehension_score %>%
   left_join(proficiency_df, by = "ParticipantId")
 
+comprehension_score_metrics <- final_comprehension_score_data %>%
+  group_by(Type, Proficiency) %>%
+  summarise(Mean_Score = mean(Mean_Comprehension_Score, na.rm = TRUE), SD = sd(Mean_Comprehension_Score, na.rm = TRUE))
+
+comprehension_score_metrics
+
 cs_srp <- ggplot(final_comprehension_score_data, aes(x = Type, y = Mean_Comprehension_Score, color = Proficiency, group = Proficiency)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
@@ -95,12 +108,13 @@ cs_srp <- ggplot(final_comprehension_score_data, aes(x = Type, y = Mean_Comprehe
   ) +
   theme_minimal() +
   scale_color_brewer(palette = "Set1")
-ggsave(filename = "cs_srp.jpg", plot = cs_srp, width = 8, height = 6, dpi = 800)
+ggsave(filename = file.path(plot_dir, "cs_srp.jpg"), plot = cs_srp, width = 8, height = 6, dpi = 800)
 
 "
   Reading time vs the participant's VST Score
 "
-vst_data <- read.csv("vst_output.csv")
+file_path_vst_data <- file.path(parent_dir, "False-Friends/csv", "vst_output.csv")
+vst_data <- read.csv(file_path_vst_data)
 participant_score <- vst_data %>%
   group_by(ParticipantId) %>%
   summarize(
@@ -155,14 +169,15 @@ vst_spr_data <- mean_reading_time %>%
   left_join(filtered_participant_score, by = "ParticipantId") %>%
   filter(!is.na(Score))
 
+
 # Plot the results
 rt_vst <- ggplot(vst_spr_data, aes(x = Score, y = Mean_Reading_Time, color = Type)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
-  labs(x = "Score", y = "Mean Reading Time", title = "Mean Reading Time by Condition and VST Score") +
+  labs(x = "VST Score", y = "Mean Reading Time", title = "Mean Reading Time by Condition and VST Score") +
   theme_classic()
 
-ggsave(filename = "rt_vst.jpg", plot = rt_vst, width = 8, height = 6, dpi = 800)
+ggsave(filename = file.path(plot_dir, "rt_vst.jpg"), plot = rt_vst, width = 8, height = 6, dpi = 800)
 
 "
   Comprehension Question score based on VST Score
@@ -170,27 +185,16 @@ ggsave(filename = "rt_vst.jpg", plot = rt_vst, width = 8, height = 6, dpi = 800)
 vst_comprehension_data <- comprehension_score %>%
   left_join(filtered_participant_score, by = "ParticipantId") %>%
   filter(!is.na(Score))
+mean_score_by_type <- vst_comprehension_data %>%
+  group_by(Type) %>%
+  summarise(Mean_Score = mean(Mean_Comprehension_Score, na.rm = TRUE), SD = sd(Mean_Comprehension_Score, na.rm = TRUE))
 
+# Print the result
+mean_score_by_type
 cs_vst <- ggplot(vst_comprehension_data, aes(x = Score, y = Mean_Comprehension_Score, color = Type)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point", size = 3) +
-  labs(x = "Score", y = "Mean Comprehension Score", title = "Mean Comprehension Score by Condition and VST Score") +
+  labs(x = "VST Score", y = "Mean Comprehension Score", title = "Mean Comprehension Score by Condition and VST Score") +
   theme_classic()
 
-ggsave(filename = "cs_vst.jpg", plot = cs_vst, width = 8, height = 6, dpi = 800)
-
-"
-  Comprehension Question score based on the length of the sentence
-"
-comprehension_score_sentence_length <- aggregate(Matches ~ Type + SentenceLength, data = stimuli_data, FUN = mean)
-
-# Create the plot
-ggplot(comprehension_score_sentence_length, aes(x = SentenceLength, y = Matches, color = Type, group = Type)) +
-  geom_line() +
-  geom_point() +
-  labs(
-    x = "Sentence Length", y = "Score",
-    title = "Interaction between Sentence Length and Accuracy by Type"
-  ) +
-  theme_minimal() +
-  scale_y_continuous(limits = c(0, 1), labels = scales::percent)
+ggsave(filename = file.path(plot_dir, "cs_vst.jpg"), plot = cs_vst, width = 8, height = 6, dpi = 800)

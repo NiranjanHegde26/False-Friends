@@ -14,10 +14,16 @@ library(emmeans)
 library(lmerTest)
 library(ggplot2)
 
-stimuli_data <- read.csv("spr.csv")
-demographics_data <- read.csv("demographics_output.csv")
-vst_data <- read.csv("vst_output.csv")
+# Read CSV files
+current_dir <- getwd()
+parent_dir <- dirname(current_dir)
+file_path_data <- file.path(parent_dir, "False-Friends/csv", "spr.csv")
+file_path_demographics <- file.path(parent_dir, "False-Friends/csv", "demographics_output.csv")
+file_path_vst_data <- file.path(parent_dir, "False-Friends/csv", "vst_output.csv")
 
+stimuli_data <- read.csv(file_path_data)
+demographics_data <- read.csv(file_path_demographics)
+vst_data <- read.csv(file_path_vst_data)
 proficiency_df <- data.frame(
     ParticipantId = demographics_data$ParticipantId,
     Proficiency = demographics_data$L1_level

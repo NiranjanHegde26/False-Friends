@@ -18,7 +18,10 @@ library(dplyr)
 library(tidyr)
 
 # Read the CSV file
-data <- read.csv("my_results.csv")
+current_dir <- getwd()
+parent_dir <- dirname(current_dir)
+file_path_data <- file.path(parent_dir, "False-Friends/csv", "cleaned.csv")
+data <- read.csv(file_path_data)
 
 # Filter rows with demographic information and select relevant columns
 vst_original <- data %>%
@@ -44,4 +47,5 @@ vst_cleaned$Matches <- as.numeric(
 )
 
 # Write the result to a new CSV file
-write.csv(vst_cleaned, "vst_output.csv", row.names = FALSE)
+output_file_path <- file.path(parent_dir, "False-Friends/csv", "vst_output.csv")
+write.csv(vst_cleaned, output_file_path, row.names = FALSE)

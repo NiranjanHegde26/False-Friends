@@ -14,9 +14,16 @@ library(ggplot2)
 library(lmerTest)
 library(emmeans)
 
-stimuli_data <- read.csv("spr.csv")
-demographics_data <- read.csv("demographics_output.csv")
-vst_data <- read.csv("vst_output.csv")
+# Read CSV files
+current_dir <- getwd()
+parent_dir <- dirname(current_dir)
+file_path_data <- file.path(parent_dir, "False-Friends/csv", "spr.csv")
+file_path_demographics <- file.path(parent_dir, "False-Friends/csv", "demographics_output.csv")
+file_path_vst_data <- file.path(parent_dir, "False-Friends/csv", "vst_output.csv")
+
+stimuli_data <- read.csv(file_path_data)
+demographics_data <- read.csv(file_path_demographics)
+vst_data <- read.csv(file_path_vst_data)
 
 proficiency_df <- data.frame(
     ParticipantId = demographics_data$ParticipantId,
@@ -36,8 +43,7 @@ participant_score <- vst_data %>%
 # Use them to exclude any data that are above and below some bound defined by these metrics.
 overall_mean_score <- mean(participant_score$Score, na.rm = TRUE)
 overall_score_sd <- sd(participant_score$Score)
-overall_mean_score
-overall_score_sd
+
 # Look at this later.
 Q1 <- quantile(participant_score$Score, 0.25) # First quartile (25th percentile)
 Q3 <- quantile(participant_score$Score, 0.75) # Third quartile (75th percentile)
@@ -104,6 +110,7 @@ comprehension_score_data_vst <- stimuli_data %>%
     left_join(proficiency_df, by = "ParticipantId") %>%
     left_join(participant_score, by = "ParticipantId") %>%
     filter(!is.na(Score))
+
 comprehension_score_data_vst$Score_centered <- scale(comprehension_score_data_vst$Score, center = TRUE, scale = FALSE)
 model_cs_vst <- glmer(Matches ~ Score_centered * Type + (1 | ParticipantId),
     data = comprehension_score_data_vst,

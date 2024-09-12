@@ -12,7 +12,10 @@ library(dplyr)
 library(tidyr)
 
 # Read the CSV file
-data <- read.csv("my_results.csv")
+current_dir <- getwd()
+parent_dir <- dirname(current_dir)
+file_path_data <- file.path(parent_dir, "False-Friends/csv", "cleaned.csv")
+data <- read.csv(file_path_data)
 
 # Filter rows with demographic information and select relevant columns
 demographics <- data %>%
@@ -28,4 +31,5 @@ demographics_wide <- demographics_wide %>%
   rename(ParticipantId = MD5.hash.of.participant.s.IP.address)
 
 # Write the result to a new CSV file
-write.csv(demographics_wide, "demographics_output.csv", row.names = FALSE)
+output_file_path <- file.path(parent_dir, "False-Friends/csv", "demographics_output.csv")
+write.csv(demographics_wide, output_file_path, row.names = FALSE)
