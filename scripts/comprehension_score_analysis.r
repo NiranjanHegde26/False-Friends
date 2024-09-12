@@ -70,6 +70,7 @@ word_types <- c("false friend", "cognate", "unrelated")
 comprehension_score_data$Proficiency <- factor(comprehension_score_data$Proficiency, levels = self_reported_proficiency_levels)
 comprehension_score_data$Type <- factor(comprehension_score_data$Type, levels = word_types)
 
+# Apply contrasts to the predictors.
 contrasts(comprehension_score_data$Proficiency) <- contr.helmert(2)
 word_type_contrasts <- matrix(c(
     2 / 3, -1 / 3, -1 / 3,
@@ -77,8 +78,9 @@ word_type_contrasts <- matrix(c(
 ), ncol = 2)
 contrasts(comprehension_score_data$Type) <- word_type_contrasts
 
-
-# Model fit for Self Reported Proficiency
+"
+     Model fit for Self Reported Proficiency
+"
 model_cs_srp <- glmer(Matches ~ Proficiency * Type + (1 | ParticipantId), data = comprehension_score_data, family = binomial)
 summary(model_cs_srp)
 emmeans(model_cs_srp, pairwise ~ Type | Proficiency)
@@ -104,8 +106,9 @@ ggplot(residuals_qq_df, aes(sample = Residuals)) +
     labs(title = "Q-Q Plot of Residuals - Comprehension Score vs Self Reported Proficiency", x = "Theoretical Quantiles", y = "Sample Quantiles") +
     theme_minimal()
 
-
-# Model fit for VST Score
+"
+    Model fit for VST Score
+"
 comprehension_score_data_vst <- stimuli_data %>%
     left_join(proficiency_df, by = "ParticipantId") %>%
     left_join(participant_score, by = "ParticipantId") %>%
@@ -139,38 +142,14 @@ ggplot(residuals_qq_df, aes(sample = Residuals)) +
     theme_minimal()
 emmeans(model_cs_vst, pairwise ~ Type | Score_centered)
 
-# Add sentence length as a fixed effect to see if it can give a better fit.
-# The assumption here is that maybe the sentence length has an effect on the participants' ability to answer.
-# Longer sentences might lead to working memory overload and hence has an influence on the answering.
-
-summary(comprehension_score_data$SentenceLength)
-hist(comprehension_score_data$SentenceLength)
-
-# Howeveer, the basic summary and histogram says that the sentence length is not normally distributed.
-# We scale the sentence length to fit the model.
-
-comprehension_score_data$SentenceLengthScaled <- scale(comprehension_score_data$SentenceLength)
-hist(comprehension_score_data$SentenceLengthScaled)
-
-model_cs_sl_srp <- glmer(Matches ~ Proficiency * Type + SentenceLengthScaled + (1 | ParticipantId), data = comprehension_score_data, family = binomial)
-summary(model_cs_sl_srp)
-
-model_cs_sl_vst <- glmer(Matches ~ Accuracy * Type + SentenceLengthScaled + (1 | ParticipantId),
-    data = comprehension_score_data,
-    family = binomial
-)
-summary(model_cs_sl_vst)
-# There is no conervenge for GLMER model with sentence length.
-
-
 # Compare 3 models based on AIC and BIC
-models <- list(model_cs_srp, model_cs_vst, model_cs_sl_srp)
+models <- list(model_cs_srp, model_cs_vst)
 aic_values <- sapply(models, AIC)
 bic_values <- sapply(models, BIC)
 
 # Create a data frame for easy comparison
 comparison <- data.frame(
-    Model = paste0("Model", 1:3),
+    Model = paste0("Model", 1:2),
     AIC = aic_values,
     BIC = bic_values
 )
