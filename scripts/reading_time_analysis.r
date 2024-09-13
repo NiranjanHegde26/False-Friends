@@ -6,6 +6,9 @@ Reference documentation from R:
     - https://www.rdocumentation.org/packages/lme4/versions/1.1-35.5/topics/glmer
     This file contains the model fit and analysis of Reading time of target words based on both self reported proficiency and VST score.
 "
+if (!require(lme4)) install.packages("lme4")
+if (!require(lmerTest)) install.packages("lmerTest")
+if (!require(emmeans)) install.packages("emmeans")
 
 library(dplyr)
 library(tidyr)

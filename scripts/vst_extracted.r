@@ -12,7 +12,6 @@ is introduced to capture the compare the participant's choice versus the actual 
 "
 
 # Load necessary libraries
-if (!require(stringr)) install.packages("stringr")
 library(stringr)
 library(dplyr)
 library(tidyr)

@@ -8,6 +8,9 @@ Reference documentation and online blogs referred:
 Below script will extract the data from Main stimuli CSV, select the relevant columns and extract all the rows that are marked as main.
 Also, another operation is executed where all the keypresses are captured. Both are joined together later.
 "
+if (!require(dplyr)) install.packages("dplyr")
+if (!require(tidyr)) install.packages("tidyr")
+if (!require(stringr)) install.packages("stringr")
 
 # Load required library
 library(dplyr)

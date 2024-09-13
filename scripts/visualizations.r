@@ -6,6 +6,7 @@ Reference documentation from R:
     - https://ggplot2.tidyverse.org/
     This script is dedicated for visualizing the descriptic statistics as well as the interactions of word-types and proficiency levels (Or VST score).
 "
+if (!require(ggplot2)) install.packages("ggplot2")
 
 library(dplyr)
 library(tidyr)
